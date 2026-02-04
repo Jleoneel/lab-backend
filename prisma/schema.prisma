@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  ANALYST
+}
+
+model User {
+  id           String   @id @default(uuid())
+  fullName     String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(ADMIN)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Client {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  city      String?
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotes   Quote[]
+  requests Request[]
+
+  @@index([name])
+}
+
+model Service {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  name          String
+  priceExternal Decimal
+  priceStudent  Decimal
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  quoteItems QuoteItem[]
+
+  @@index([name])
+}
+
+enum PriceList {
+  EXTERNO
+  ESTUDIANTE
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  APPROVED
+  CANCELLED
+}
+
+model Quote {
+  id          String @id @default(uuid())
+  quoteNumber String @unique
+  clientId    String
+  client      Client @relation(fields: [clientId], references: [id])
+
+  priceList  PriceList
+  ivaPercent Decimal
+  subtotal   Decimal
+  ivaAmount  Decimal
+  total      Decimal
+
+  validUntil DateTime?
+  status     QuoteStatus @default(DRAFT)
+
+  items QuoteItem[]
+
+  request Request?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([createdAt])
+}
+
+model QuoteItem {
+  id      String @id @default(uuid())
+  quoteId String
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  quantity         Int
+  unitPriceApplied Decimal
+  lineSubtotal     Decimal
+
+  createdAt DateTime @default(now())
+
+  @@index([quoteId])
+  @@index([serviceId])
+}
+
+enum RequestStatus {
+  OPEN
+  IN_PROGRESS
+  READY_REPORT
+  DONE
+  CANCELLED
+}
+
+enum SampleStatus {
+  EN_COLA
+  EN_PROCESO
+  LISTO_PARA_INFORME
+  TERMINADO
+}
+
+model Request {
+  id            String @id @default(uuid())
+  requestNumber String @unique
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  quoteId String? @unique
+  quote   Quote?  @relation(fields: [quoteId], references: [id])
+
+  status RequestStatus @default(OPEN)
+
+  samples Sample[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([quoteId])
+  @@index([createdAt])
+}
+
+model Sample {
+  id        String  @id @default(uuid())
+  requestId String
+  request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  sampleCode  String   @unique
+  sampleName  String?
+  description String?
+  receivedAt  DateTime @default(now())
+
+  status SampleStatus @default(EN_COLA)
+
+  history SampleStatusHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requestId])
+  @@index([status])
+  @@index([receivedAt])
+}
+
+model SampleStatusHistory {
+  id       String @id @default(uuid())
+  sampleId String
+  sample   Sample @relation(fields: [sampleId], references: [id], onDelete: Cascade)
+
+  fromStatus SampleStatus?
+  toStatus   SampleStatus
+
+  changedBy String
+  // changedBy -> User.id (en Prisma lo conectamos cuando quieras; por ahora lo dejamos string)
+  changedAt DateTime @default(now())
+  note      String?
+
+  @@index([sampleId])
+  @@index([changedAt])
+}
