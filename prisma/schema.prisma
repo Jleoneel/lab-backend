@@ -48,7 +48,8 @@ model Service {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  quoteItems QuoteItem[]
+  quoteItems  QuoteItem[]
+  sampleLinks SampleService[]
 
   @@index([name])
 }
@@ -163,6 +164,8 @@ model Sample {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  services SampleService[]
+
   @@index([requestId])
   @@index([status])
   @@index([receivedAt])
@@ -183,4 +186,49 @@ model SampleStatusHistory {
 
   @@index([sampleId])
   @@index([changedAt])
+}
+
+enum SampleServiceStatus {
+  PENDING
+  RUNNING
+  DONE
+}
+
+model SampleService {
+  id String @id @default(uuid())
+
+  sampleId String
+  sample   Sample @relation(fields: [sampleId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  status SampleServiceStatus @default(PENDING)
+
+  assignedTo String?
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  createdAt DateTime @default(now()) 
+
+  result Result?
+
+  @@unique([sampleId, serviceId])
+  @@index([sampleId])
+  @@index([serviceId])
+  @@index([status])
+}
+
+model Result {
+  id              String        @id @default(uuid())
+  sampleServiceId String        @unique
+  sampleService   SampleService @relation(fields: [sampleServiceId], references: [id], onDelete: Cascade)
+
+  resultText      String?
+  resultNumber    Decimal?      
+  unit            String?
+  isFinal         Boolean       @default(false)
+
+  recordedBy      String
+  recordedAt      DateTime      @default(now())
 }

@@ -117,6 +117,25 @@ async function changeSampleStatus(sampleId, toStatus, userId, note) {
     throw err;
   }
 
+  if (toStatus === "LISTO_PARA_INFORME") {
+  const total = await prisma.sampleService.count({ where: { sampleId } });
+  if (total === 0) {
+    const err = new Error("No puedes pasar a LISTO_PARA_INFORME sin análisis asignados");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const pending = await prisma.sampleService.count({
+    where: { sampleId, status: { not: "DONE" } },
+  });
+
+  if (pending > 0) {
+    const err = new Error("No puedes pasar a LISTO_PARA_INFORME: hay análisis pendientes");
+    err.statusCode = 400;
+    throw err;
+  }
+}
+
   const updated = await prisma.sample.update({
     where: { id: sampleId },
     data: {

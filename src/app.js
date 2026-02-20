@@ -7,6 +7,7 @@ const serviceRoutes = require("./routes/service.routes");
 const quoteRoutes = require("./routes/quote.routes");
 const requestRoutes = require("./routes/request.routes");
 const sampleRoutes = require("./routes/sample.routes");
+const sampleServiceRoutes = require("./routes/sampleService.routes");
 
 const { errorMiddleware } = require("./middlewares/error.middleware");
 
@@ -24,6 +25,7 @@ app.use("/services", serviceRoutes);
 app.use("/quotes", quoteRoutes);
 app.use("/requests", requestRoutes);
 app.use("/samples", sampleRoutes);
+app.use("/", sampleServiceRoutes);
 
 app.use(errorMiddleware);
 
