@@ -26,6 +26,7 @@ app.use("/quotes", quoteRoutes);
 app.use("/requests", requestRoutes);
 app.use("/samples", sampleRoutes);
 app.use("/", sampleServiceRoutes);
+app.use("/quotes", quoteRoutes);
 
 app.use(errorMiddleware);
 

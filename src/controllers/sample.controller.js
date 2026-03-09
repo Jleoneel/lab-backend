@@ -1,5 +1,11 @@
+const { prisma } = require("../db/prisma");
 const { changeStatusSchema } = require("../validators/sample.schema");
 const { listSamplesByStatus, getSampleById, changeSampleStatus } = require("../services/request.service");
+const {
+  listSampleServices,
+  updateSampleServiceStatus,
+  upsertResult,
+} = require("../services/sampleService.service"); // Ajusta la ruta si es necesario
 
 async function getSamples(req, res, next) {
   try {
@@ -25,4 +31,104 @@ async function patchSampleStatus(req, res, next) {
   } catch (e) { next(e); }
 }
 
-module.exports = { getSamples, getSample, patchSampleStatus };
+// GET /samples/:id/services
+async function getSampleServices(req, res, next) {
+  try {
+    const { id } = req.params;
+    const services = await listSampleServices(id);
+    res.json(services);
+  } catch (e) {
+    next(e);
+  }
+}
+
+// PATCH /sample-services/:id/status
+async function updateServiceStatus(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const updated = await updateSampleServiceStatus(id, status);
+    res.json(updated);
+  } catch (e) {
+    next(e);
+  }
+}
+
+// POST /sample-services/:id/result
+async function postResult(req, res, next) {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.sub; // o de donde obtengas el usuario
+    const result = await upsertResult(id, req.body, userId);
+    res.status(201).json(result);
+  } catch (e) {
+    next(e);
+  }
+}
+
+async function emitReport(req, res, next) {
+  try {
+    const sampleId = parseInt(req.params.id, 10);
+    if (isNaN(sampleId)) {
+      return res.status(400).json({ message: 'ID de muestra inválido' });
+    }
+
+    const userId = req.user?.sub ?? 'system'; // 👈 extraer ANTES de la transacción
+
+    const result = await prisma.$transaction(async (tx) => {
+      const sample = await tx.sample.findUnique({
+        where: { id: sampleId },
+        select: { id: true, status: true, requestId: true }
+      });
+
+      if (!sample) {
+        const e = new Error('Muestra no encontrada');
+        e.statusCode = 404;
+        throw e;
+      }
+
+      if (sample.status !== 'LISTO_PARA_INFORME') {
+        const e = new Error('La muestra debe estar en LISTO_PARA_INFORME para emitir informe');
+        e.statusCode = 400;
+        throw e;
+      }
+
+      const updated = await tx.sample.update({
+        where: { id: sampleId },
+        data: { status: 'TERMINADO' }
+      });
+
+      await tx.sampleStatusHistory.create({
+        data: {
+          sampleId,
+          fromStatus: 'LISTO_PARA_INFORME',
+          toStatus: 'TERMINADO',
+          note: 'Informe emitido',
+          changedBy: userId // 👈 usar la variable extraída
+        }
+      });
+
+      const pendingSamples = await tx.sample.count({
+        where: {
+          requestId: sample.requestId,
+          status: { not: 'TERMINADO' }
+        }
+      });
+
+      if (pendingSamples === 0) {
+        await tx.request.update({
+          where: { id: sample.requestId },
+          data: { status: 'DONE' }
+        });
+      }
+
+      return updated;
+    });
+
+    res.json(result);
+  } catch (e) {
+    next(e);
+  }
+}
+
+module.exports = { getSamples, getSample, patchSampleStatus, getSampleServices, updateServiceStatus, postResult, emitReport };

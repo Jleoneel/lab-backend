@@ -1,3 +1,4 @@
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,6 +12,7 @@ enum UserRole {
   ANALYST
 }
 
+// 🟢 INTERNO - UUID (seguridad)
 model User {
   id           String   @id @default(uuid())
   fullName     String
@@ -22,6 +24,7 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
+// 🟢 INTERNO - UUID (datos sensibles)
 model Client {
   id        String   @id @default(uuid())
   name      String
@@ -38,6 +41,7 @@ model Client {
   @@index([name])
 }
 
+// 🟢 INTERNO - UUID (catálogo)
 model Service {
   id            String   @id @default(uuid())
   code          String   @unique
@@ -64,13 +68,16 @@ enum QuoteStatus {
   SENT
   APPROVED
   CANCELLED
+  CONVERTED
 }
 
+// 🔵 EXPUESTO - Numérico (URLs limpias)
 model Quote {
-  id          String @id @default(uuid())
+  id          Int    @id @default(autoincrement())
   quoteNumber String @unique
-  clientId    String
-  client      Client @relation(fields: [clientId], references: [id])
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
 
   priceList  PriceList
   ivaPercent Decimal
@@ -82,7 +89,6 @@ model Quote {
   status     QuoteStatus @default(DRAFT)
 
   items QuoteItem[]
-
   request Request?
 
   createdAt DateTime @default(now())
@@ -94,7 +100,7 @@ model Quote {
 
 model QuoteItem {
   id      String @id @default(uuid())
-  quoteId String
+  quoteId Int
   quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
   serviceId String
@@ -125,15 +131,16 @@ enum SampleStatus {
   TERMINADO
 }
 
+// 🔵 EXPUESTO - Numérico (URLs limpias)
 model Request {
-  id            String @id @default(uuid())
+  id            Int    @id @default(autoincrement())
   requestNumber String @unique
 
   clientId String
   client   Client @relation(fields: [clientId], references: [id])
 
-  quoteId String? @unique
-  quote   Quote?  @relation(fields: [quoteId], references: [id])
+  quoteId Int?  @unique
+  quote   Quote? @relation(fields: [quoteId], references: [id])
 
   status RequestStatus @default(OPEN)
 
@@ -147,9 +154,10 @@ model Request {
   @@index([createdAt])
 }
 
+// 🔵 EXPUESTO - Numérico (URLs limpias)
 model Sample {
-  id        String  @id @default(uuid())
-  requestId String
+  id        Int     @id @default(autoincrement())
+  requestId Int
   request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   sampleCode  String   @unique
@@ -160,11 +168,10 @@ model Sample {
   status SampleStatus @default(EN_COLA)
 
   history SampleStatusHistory[]
+  services SampleService[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  services SampleService[]
 
   @@index([requestId])
   @@index([status])
@@ -173,14 +180,13 @@ model Sample {
 
 model SampleStatusHistory {
   id       String @id @default(uuid())
-  sampleId String
+  sampleId Int
   sample   Sample @relation(fields: [sampleId], references: [id], onDelete: Cascade)
 
   fromStatus SampleStatus?
   toStatus   SampleStatus
 
   changedBy String
-  // changedBy -> User.id (en Prisma lo conectamos cuando quieras; por ahora lo dejamos string)
   changedAt DateTime @default(now())
   note      String?
 
@@ -197,7 +203,7 @@ enum SampleServiceStatus {
 model SampleService {
   id String @id @default(uuid())
 
-  sampleId String
+  sampleId Int
   sample   Sample @relation(fields: [sampleId], references: [id], onDelete: Cascade)
 
   serviceId String
@@ -209,9 +215,8 @@ model SampleService {
   startedAt  DateTime?
   finishedAt DateTime?
 
-  createdAt DateTime @default(now()) 
-
-  result Result?
+  createdAt DateTime @default(now())
+  result    Result?
 
   @@unique([sampleId, serviceId])
   @@index([sampleId])
@@ -220,15 +225,15 @@ model SampleService {
 }
 
 model Result {
-  id              String        @id @default(uuid())
-  sampleServiceId String        @unique
+  id              String @id @default(uuid())
+  sampleServiceId String @unique
   sampleService   SampleService @relation(fields: [sampleServiceId], references: [id], onDelete: Cascade)
 
-  resultText      String?
-  resultNumber    Decimal?      
-  unit            String?
-  isFinal         Boolean       @default(false)
+  resultText   String?
+  resultNumber Decimal?
+  unit         String?
+  isFinal      Boolean  @default(false)
 
-  recordedBy      String
-  recordedAt      DateTime      @default(now())
+  recordedBy String
+  recordedAt DateTime @default(now())
 }

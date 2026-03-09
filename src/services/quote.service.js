@@ -13,7 +13,13 @@ function generateQuoteNumber() {
   return `COT-${y}${m}${day}-${rand}`;
 }
 
-async function createQuote({ clientId, priceList, ivaPercent = 0, validUntil, items }) {
+async function createQuote({
+  clientId,
+  priceList,
+  ivaPercent = 0,
+  validUntil,
+  items,
+}) {
   // 1) validar cliente
   const client = await prisma.client.findUnique({ where: { id: clientId } });
   if (!client) {
@@ -23,13 +29,19 @@ async function createQuote({ clientId, priceList, ivaPercent = 0, validUntil, it
   }
 
   // 2) traer servicios en lote
-  const serviceIds = items.map(i => i.serviceId);
+  const serviceIds = items.map((i) => i.serviceId);
   const services = await prisma.service.findMany({
     where: { id: { in: serviceIds }, isActive: true },
-    select: { id: true, priceExternal: true, priceStudent: true, name: true, code: true },
+    select: {
+      id: true,
+      priceExternal: true,
+      priceStudent: true,
+      name: true,
+      code: true,
+    },
   });
 
-  const map = new Map(services.map(s => [s.id, s]));
+  const map = new Map(services.map((s) => [s.id, s]));
   for (const it of items) {
     if (!map.has(it.serviceId)) {
       const err = new Error("Uno o más servicios no existen o están inactivos");
@@ -47,9 +59,12 @@ async function createQuote({ clientId, priceList, ivaPercent = 0, validUntil, it
 
   // 3) calcular totales en centavos
   let subtotal = 0;
-  const computedItems = items.map(it => {
+  const computedItems = items.map((it) => {
     const s = map.get(it.serviceId);
-    const unit = priceList === "ESTUDIANTE" ? Number(s.priceStudent) : Number(s.priceExternal);
+    const unit =
+      priceList === "ESTUDIANTE"
+        ? Number(s.priceStudent)
+        : Number(s.priceExternal);
     const line = unit * it.quantity;
     subtotal += line;
     return {
@@ -78,7 +93,7 @@ async function createQuote({ clientId, priceList, ivaPercent = 0, validUntil, it
       total: String(total),
       validUntil: validUntil ? new Date(validUntil) : null,
       items: {
-        create: computedItems.map(ci => ({
+        create: computedItems.map((ci) => ({
           serviceId: ci.serviceId,
           quantity: ci.quantity,
           unitPriceApplied: String(ci.unitPriceApplied),
@@ -96,15 +111,28 @@ async function createQuote({ clientId, priceList, ivaPercent = 0, validUntil, it
 }
 
 async function getQuoteById(id) {
+  const numericId = typeof id === "string" ? parseInt(id, 10) : id;
+
+  if (isNaN(numericId)) {
+    throw new Error("ID inválido");
+  }
+
   return prisma.quote.findUnique({
-    where: { id },
-    include: { client: true, items: { include: { service: true } } },
+    where: { id: numericId },
+    include: {
+      client: true,
+      items: {
+        include: { service: true },
+      },
+    },
   });
 }
 
 async function listQuotes({ q, take = 20 }) {
   return prisma.quote.findMany({
-    where: q ? { quoteNumber: { contains: q, mode: "insensitive" } } : undefined,
+    where: q
+      ? { quoteNumber: { contains: q, mode: "insensitive" } }
+      : undefined,
     orderBy: { createdAt: "desc" },
     take,
     include: { client: true },
