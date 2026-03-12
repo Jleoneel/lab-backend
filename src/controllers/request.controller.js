@@ -1,11 +1,6 @@
 const { prisma } = require("../db/prisma");
-const { get } = require("../routes/request.routes");
 const {
-  createRequest,
   listRequests,
-  getSampleById,
-  changeSampleStatus,
-  listSamplesByStatus,
   getSamplesByRequestId,
 } = require("../services/request.service");
 
@@ -20,29 +15,24 @@ async function getRequests(req, res, next) {
   }
 }
 
-async function getRequest(req, res, next) {
-  try {
-    const { id } = req.params;
-    const request = await getRequestById(id);
-    if (!request) {
-      return res.status(404).json({ message: "Solicitud no encontrada" });
-    }
-    res.json(request);
-  } catch (e) {
-    next(e);
-  }
-}
-
-// Si necesitas obtener una request por ID (para el detalle)
 async function getRequestById(req, res, next) {
   try {
     const { id } = req.params;
     const request = await prisma.request.findUnique({
       where: { id: parseInt(id) },
-      include: { client: true, samples: true },
+      include: { 
+        client: true, 
+        samples: true,
+        quote: true  // 👈 agregar
+      },
     });
     if (!request) return res.status(404).json({ message: "Solicitud no encontrada" });
-    res.json(request);
+    
+    res.json({
+      ...request,
+      client: request.client.name,
+      quoteNumber: request.quote?.quoteNumber ?? null
+    });
   } catch (e) {
     next(e);
   }
@@ -64,5 +54,4 @@ module.exports = {
   getRequests,
   getRequestById,
   getRequestSamples,
-  getRequest,
 };

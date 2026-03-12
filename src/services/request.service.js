@@ -44,7 +44,6 @@ async function listRequests({ q, take = 20 } = {}) {
 
 // Obtener una solicitud por ID con sus relaciones
 async function getRequestById(id) {
-  // Convertir a número si es necesario (asumiendo ID numérico)
   const numericId = typeof id === "string" ? parseInt(id, 10) : id;
   if (isNaN(numericId)) {
     const err = new Error("ID de solicitud inválido");
@@ -241,6 +240,49 @@ async function changeSampleStatus(sampleId, toStatus, userId, note) {
   return updated;
 }
 
+async function getKanbanSamples() {
+  const allSamples = await prisma.sample.findMany({
+    include: {
+      request: {
+        include: { client: true }
+      },
+      services: {
+        select: { status: true }
+      }
+    },
+    orderBy: { receivedAt: 'asc' }
+  });
+
+  const grouped = {
+    EN_COLA: [],
+    EN_PROCESO: [],
+    LISTO_PARA_INFORME: [],
+    TERMINADO: []
+  };
+
+  for (const sample of allSamples) {
+    const total = sample.services.length;
+    const completed = sample.services.filter(s => s.status === 'DONE').length;
+
+    const mapped = {
+      id: sample.id,
+      sampleCode: sample.sampleCode,
+      sampleName: sample.sampleName,
+      description: sample.description,
+      status: sample.status,
+      receivedAt: sample.receivedAt,
+      clientName: sample.request?.client?.name ?? null,
+      analysesProgress: total > 0 ? { total, completed } : null
+    };
+
+    if (grouped[sample.status]) {
+      grouped[sample.status].push(mapped);
+    }
+  }
+
+  return grouped;
+}
+
 module.exports = {
   createRequest,
   listSamplesByStatus,
@@ -249,4 +291,5 @@ module.exports = {
   listRequests,
   getRequestById,
   getSamplesByRequestId,
+  getKanbanSamples
 };

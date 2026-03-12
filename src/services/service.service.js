@@ -13,11 +13,15 @@ async function listServices(q) {
   return prisma.service.findMany({
     where,
     orderBy: { createdAt: "desc" },
+    include: {
+      _count: {
+        select: { quoteItems: true, sampleLinks: true} 
+      }
+    }
   });
 }
 
 async function createService(data) {
-  // Convert to string so Prisma Decimal is happy (pg numeric)
   const payload = {
     ...data,
     priceExternal: String(data.priceExternal),

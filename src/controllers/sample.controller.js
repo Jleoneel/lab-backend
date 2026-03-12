@@ -1,11 +1,8 @@
 const { prisma } = require("../db/prisma");
 const { changeStatusSchema } = require("../validators/sample.schema");
-const { listSamplesByStatus, getSampleById, changeSampleStatus } = require("../services/request.service");
-const {
-  listSampleServices,
-  updateSampleServiceStatus,
-  upsertResult,
-} = require("../services/sampleService.service"); // Ajusta la ruta si es necesario
+const { listSamplesByStatus, getSampleById, changeSampleStatus, getKanbanSamples } = require("../services/request.service");
+const {listSampleServices, updateSampleServiceStatus, upsertResult,Z} = require("../services/sampleService.service");
+const { recalcAndUpdateSampleStatus } = require('../services/sampleStatus.recalc');
 
 async function getSamples(req, res, next) {
   try {
@@ -31,7 +28,6 @@ async function patchSampleStatus(req, res, next) {
   } catch (e) { next(e); }
 }
 
-// GET /samples/:id/services
 async function getSampleServices(req, res, next) {
   try {
     const { id } = req.params;
@@ -42,7 +38,6 @@ async function getSampleServices(req, res, next) {
   }
 }
 
-// PATCH /sample-services/:id/status
 async function updateServiceStatus(req, res, next) {
   try {
     const { id } = req.params;
@@ -54,12 +49,15 @@ async function updateServiceStatus(req, res, next) {
   }
 }
 
-// POST /sample-services/:id/result
 async function postResult(req, res, next) {
   try {
     const { id } = req.params;
-    const userId = req.user?.sub; // o de donde obtengas el usuario
+    const userId = req.user?.sub ?? 'system';
     const result = await upsertResult(id, req.body, userId);
+    const updatedSS = await updateSampleServiceStatus(id, 'DONE');
+
+    await recalcAndUpdateSampleStatus(updatedSS.sampleId, userId);
+
     res.status(201).json(result);
   } catch (e) {
     next(e);
@@ -73,7 +71,7 @@ async function emitReport(req, res, next) {
       return res.status(400).json({ message: 'ID de muestra inválido' });
     }
 
-    const userId = req.user?.sub ?? 'system'; // 👈 extraer ANTES de la transacción
+    const userId = req.user?.sub ?? 'system';
 
     const result = await prisma.$transaction(async (tx) => {
       const sample = await tx.sample.findUnique({
@@ -131,4 +129,13 @@ async function emitReport(req, res, next) {
   }
 }
 
-module.exports = { getSamples, getSample, patchSampleStatus, getSampleServices, updateServiceStatus, postResult, emitReport };
+async function getKanban(req, res, next) {
+  try {
+    const data = await getKanbanSamples();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+}
+
+module.exports = { getSamples, getSample, patchSampleStatus, getSampleServices, updateServiceStatus, postResult, emitReport, getKanban };

@@ -30,7 +30,6 @@ async function getQuote(req, res, next) {
   }
 }
 
-
 async function convertQuote(req, res, next) {
   try {
     const { id } = req.params;
@@ -85,14 +84,16 @@ async function updateQuoteStatus(req, res, next) {
   }
 }
 
+const { updateQuote } = require('../services/quote.service');
 
-// Y actualizar el module.exports al final:
-module.exports = { 
-  postQuote, 
-  getQuote, 
-  getQuotes, 
-  convertQuote,
-  updateQuoteStatus  // ← AGREGAR ESTA LÍNEA
-};
+async function putQuote(req, res, next) {
+  try {
+    const body = createQuoteSchema.parse(req.body);
+    const updated = await updateQuote(req.params.id, body);
+    res.json(updated);
+  } catch (e) {
+    next(e);
+  }
+}
 
-module.exports = { postQuote, getQuote, getQuotes, convertQuote, updateQuoteStatus };
+module.exports = { postQuote, getQuote, getQuotes, convertQuote, updateQuoteStatus, putQuote };

@@ -8,6 +8,11 @@ async function listClients(q) {
   return prisma.client.findMany({
     where,
     orderBy: { createdAt: "desc" },
+    include: {
+      _count: {
+        select: {  quotes: true, requests: true }
+      }
+    }
   });
 }
 

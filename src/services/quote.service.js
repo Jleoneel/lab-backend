@@ -139,4 +139,70 @@ async function listQuotes({ q, take = 20 }) {
   });
 }
 
-module.exports = { createQuote, getQuoteById, listQuotes };
+async function updateQuote(id, { clientId, priceList, ivaPercent, validUntil, items }) {
+  const numericId = parseInt(id, 10);
+  
+  const quote = await prisma.quote.findUnique({ where: { id: numericId } });
+  if (!quote) {
+    const err = new Error("Cotización no encontrada");
+    err.statusCode = 404;
+    throw err;
+  }
+  if (quote.status !== 'DRAFT') {
+    const err = new Error("Solo se pueden editar cotizaciones en borrador");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const serviceIds = items.map(i => i.serviceId);
+  const services = await prisma.service.findMany({
+    where: { id: { in: serviceIds }, isActive: true },
+    select: { id: true, priceExternal: true, priceStudent: true }
+  });
+  const map = new Map(services.map(s => [s.id, s]));
+
+  const ivaPct = Number(ivaPercent ?? 0);
+  let subtotal = 0;
+  const computedItems = items.map(it => {
+    const s = map.get(it.serviceId);
+    const unit = priceList === 'ESTUDIANTE' ? Number(s.priceStudent) : Number(s.priceExternal);
+    const line = unit * it.quantity;
+    subtotal += line;
+    return {
+      serviceId: it.serviceId,
+      quantity: it.quantity,
+      unitPriceApplied: to2(unit),
+      lineSubtotal: to2(line),
+    };
+  });
+
+  subtotal = to2(subtotal);
+  const ivaAmount = to2(subtotal * (ivaPct / 100));
+  const total = to2(subtotal + ivaAmount);
+
+  return prisma.quote.update({
+    where: { id: numericId },
+    data: {
+      clientId,
+      priceList,
+      ivaPercent: String(to2(ivaPct)),
+      subtotal: String(subtotal),
+      ivaAmount: String(ivaAmount),
+      total: String(total),
+      validUntil: validUntil ? new Date(validUntil) : null,
+      items: {
+        deleteMany: {},  // eliminar items anteriores
+        create: computedItems.map(ci => ({
+          serviceId: ci.serviceId,
+          quantity: ci.quantity,
+          unitPriceApplied: String(ci.unitPriceApplied),
+          lineSubtotal: String(ci.lineSubtotal),
+        }))
+      }
+    },
+    include: { client: true, items: { include: { service: true } } }
+  });
+}
+
+module.exports = { createQuote, getQuoteById, listQuotes, updateQuote };
+

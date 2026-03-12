@@ -1,7 +1,8 @@
 const { prisma } = require("../db/prisma");
 
 async function assignServicesToSample(sampleId, serviceIds) {
-  const numericId = typeof sampleId === 'string' ? parseInt(sampleId, 10) : sampleId;
+  const numericId =
+    typeof sampleId === "string" ? parseInt(sampleId, 10) : sampleId;
   if (isNaN(numericId)) {
     const e = new Error("ID de muestra inválido");
     e.statusCode = 400;
@@ -41,7 +42,8 @@ async function assignServicesToSample(sampleId, serviceIds) {
 }
 
 async function listSampleServices(sampleId) {
-  const numericId = typeof sampleId === 'string' ? parseInt(sampleId, 10) : sampleId;
+  const numericId =
+    typeof sampleId === "string" ? parseInt(sampleId, 10) : sampleId;
   if (isNaN(numericId)) {
     const e = new Error("ID de muestra inválido");
     e.statusCode = 400;
@@ -81,7 +83,6 @@ async function updateSampleServiceStatus(id, status) {
 }
 
 async function upsertResult(sampleServiceId, payload, userId) {
-  // SampleService.id es UUID, NO se hace parseInt
   const ss = await prisma.sampleService.findUnique({
     where: { id: sampleServiceId },
   });
@@ -103,7 +104,11 @@ async function upsertResult(sampleServiceId, payload, userId) {
   return prisma.result.upsert({
     where: { sampleServiceId },
     create: { sampleServiceId, ...data },
-    update: { ...data, recordedAt: new Date() },
+    update: {
+      ...data,
+      recordedBy: userId,
+      recordedAt: new Date(),
+    },
   });
 }
 

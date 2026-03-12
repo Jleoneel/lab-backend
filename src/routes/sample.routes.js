@@ -8,13 +8,15 @@ const {
   getSampleServices,
   updateServiceStatus,
   emitReport,
-  postResult
+  postResult,
+  getKanban
 } = require("../controllers/sample.controller");
 
-// ✅ Primero las rutas específicas
 router.patch('/sample-services/:id/status', updateServiceStatus);
 router.post('/sample-services/:id/result', postResult);
 router.post('/:id/emit-report', emitReport);
+router.get('/kanban', getKanban);
+router.get('/:id', getSample);
 
 // Después las genéricas con :id
 router.get('/', getSamples);

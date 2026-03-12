@@ -1,31 +1,27 @@
 const { prisma } = require("../db/prisma");
 
+// Función para determinar el estado de la muestra basado en los estados de sus análisis
 function computeSampleStatusFromAnalyses(analysisStatuses) {
   if (analysisStatuses.length === 0) return null;
 
-  const hasRunning = analysisStatuses.some((s) => s === "RUNNING");
   const allDone = analysisStatuses.every((s) => s === "DONE");
+  const hasRunning = analysisStatuses.some((s) => s === "RUNNING");
+  const hasDone = analysisStatuses.some((s) => s === "DONE");
 
   if (allDone) return "LISTO_PARA_INFORME";
-  if (hasRunning) return "EN_PROCESO";
+  if (hasRunning || hasDone) return "EN_PROCESO";
   return "EN_COLA";
 }
 
-/**
- * Recalcula Sample.status basado en SampleService.status.
- * - No cambia si Sample está TERMINADO.
- * - Escribe historial si cambia el estado.
- */
+// Recalcula el estado de una muestra y actualiza si es necesario
 async function recalcAndUpdateSampleStatus(sampleId, changedByUserId) {
   return prisma.$transaction(async (tx) => {
     const sample = await tx.sample.findUnique({
       where: { id: sampleId },
       select: { id: true, status: true },
     });
-
     if (!sample) return null;
 
-    // No tocar automáticamente una muestra cerrada
     if (sample.status === "TERMINADO") return { sample, changed: false };
 
     const analyses = await tx.sampleService.findMany({
@@ -37,11 +33,8 @@ async function recalcAndUpdateSampleStatus(sampleId, changedByUserId) {
       analyses.map((a) => a.status),
     );
     if (!nextStatus) return { sample, changed: false };
-
-    // Si no cambió, no hacemos nada
     if (nextStatus === sample.status) return { sample, changed: false };
 
-    // Actualiza Sample
     const updated = await tx.sample.update({
       where: { id: sampleId },
       data: { status: nextStatus },
