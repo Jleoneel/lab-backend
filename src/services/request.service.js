@@ -4,6 +4,7 @@ function pad(n, len = 4) {
   return String(n).padStart(len, "0");
 }
 
+// Formato YYYYMMDD
 function ymd(d = new Date()) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -11,15 +12,18 @@ function ymd(d = new Date()) {
   return `${y}${m}${day}`;
 }
 
+// Generar un número de solicitud único con formato RQ-YYYYMMDD-XXXX
 async function nextRequestNumber() {
   const rand = Math.floor(Math.random() * 9000) + 1000;
   return `RQ-${ymd()}-${rand}`;
 }
 
+// Generar un código de muestra único basado en el número de solicitud y un índice
 async function generateSampleCode(requestNumber, index) {
   return `${requestNumber}-S${pad(index, 2)}`;
 }
 
+// Listar solicitudes con búsqueda opcional por número de solicitud o nombre de cliente
 async function listRequests({ q, take = 20 } = {}) {
   const where = q
     ? {
@@ -82,6 +86,7 @@ async function getSamplesByRequestId(requestId) {
   });
 }
 
+// Crear una nueva solicitud con muestras asociadas
 async function createRequest(
   { clientId, quoteId = null, samples = [] },
   userId,
@@ -121,7 +126,8 @@ async function createRequest(
         create: samples.map((s, idx) => ({
           sampleCode: `${requestNumber}-S${pad(idx + 1, 2)}`,
           sampleName: s.sampleName ?? null,
-          description: s.description ?? null,
+          objetivoAnalisis: s.objetivoAnalisis ?? null,
+          cantidadRecibida: s.cantidadRecibida ?? null,
           status: "EN_COLA",
           history: {
             create: [
@@ -142,6 +148,7 @@ async function createRequest(
   return created;
 }
 
+// Listar muestras por estado con información de solicitud y cliente
 async function listSamplesByStatus(status) {
   return prisma.sample.findMany({
     where: status ? { status } : undefined,
@@ -152,6 +159,7 @@ async function listSamplesByStatus(status) {
   });
 }
 
+// Obtener una muestra por ID con su historial y datos relacionados
 async function getSampleById(id) {
   // Convertir a número
   const numericId = typeof id === "string" ? parseInt(id, 10) : id;
@@ -169,6 +177,7 @@ async function getSampleById(id) {
   });
 }
 
+// Cambiar el estado de una muestra con validación de transición y creación de historial
 async function changeSampleStatus(sampleId, toStatus, userId, note) {
   const sample = await prisma.sample.findUnique({ where: { id: sampleId } });
   if (!sample) {
@@ -240,39 +249,41 @@ async function changeSampleStatus(sampleId, toStatus, userId, note) {
   return updated;
 }
 
+// Obtener todas las muestras agrupadas por estado para vista Kanban
 async function getKanbanSamples() {
   const allSamples = await prisma.sample.findMany({
     include: {
       request: {
-        include: { client: true }
+        include: { client: true },
       },
       services: {
-        select: { status: true }
-      }
+        select: { status: true },
+      },
     },
-    orderBy: { receivedAt: 'asc' }
+    orderBy: { receivedAt: "asc" },
   });
 
   const grouped = {
     EN_COLA: [],
     EN_PROCESO: [],
     LISTO_PARA_INFORME: [],
-    TERMINADO: []
+    TERMINADO: [],
   };
 
   for (const sample of allSamples) {
     const total = sample.services.length;
-    const completed = sample.services.filter(s => s.status === 'DONE').length;
+    const completed = sample.services.filter((s) => s.status === "DONE").length;
 
     const mapped = {
       id: sample.id,
       sampleCode: sample.sampleCode,
       sampleName: sample.sampleName,
-      description: sample.description,
+      objetivoAnalisis: sample.objetivoAnalisis,
+      cantidadRecibida: sample.cantidadRecibida,
       status: sample.status,
       receivedAt: sample.receivedAt,
       clientName: sample.request?.client?.name ?? null,
-      analysesProgress: total > 0 ? { total, completed } : null
+      analysesProgress: total > 0 ? { total, completed } : null,
     };
 
     if (grouped[sample.status]) {
@@ -291,5 +302,5 @@ module.exports = {
   listRequests,
   getRequestById,
   getSamplesByRequestId,
-  getKanbanSamples
+  getKanbanSamples,
 };

@@ -12,7 +12,6 @@ enum UserRole {
   ANALYST
 }
 
-// 🟢 INTERNO - UUID (seguridad)
 model User {
   id           String   @id @default(uuid())
   fullName     String
@@ -24,7 +23,6 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
-// 🟢 INTERNO - UUID (datos sensibles)
 model Client {
   id        String   @id @default(uuid())
   name      String
@@ -41,7 +39,6 @@ model Client {
   @@index([name])
 }
 
-// 🟢 INTERNO - UUID (catálogo)
 model Service {
   id            String   @id @default(uuid())
   code          String   @unique
@@ -71,7 +68,6 @@ enum QuoteStatus {
   CONVERTED
 }
 
-// 🔵 EXPUESTO - Numérico (URLs limpias)
 model Quote {
   id          Int    @id @default(autoincrement())
   quoteNumber String @unique
@@ -131,7 +127,6 @@ enum SampleStatus {
   TERMINADO
 }
 
-// 🔵 EXPUESTO - Numérico (URLs limpias)
 model Request {
   id            Int    @id @default(autoincrement())
   requestNumber String @unique
@@ -154,16 +149,16 @@ model Request {
   @@index([createdAt])
 }
 
-// 🔵 EXPUESTO - Numérico (URLs limpias)
 model Sample {
   id        Int     @id @default(autoincrement())
   requestId Int
   request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
-  sampleCode  String   @unique
-  sampleName  String?
-  description String?
-  receivedAt  DateTime @default(now())
+  sampleCode        String   @unique
+  sampleName        String?
+  objetivoAnalisis  String? 
+  cantidadRecibida  String? 
+  receivedAt        DateTime @default(now())
 
   status SampleStatus @default(EN_COLA)
 

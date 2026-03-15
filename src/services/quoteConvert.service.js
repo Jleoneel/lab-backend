@@ -60,7 +60,7 @@ async function convertQuoteToRequest(quoteId, { samples }, userId) {
       where: { id: numericId },
       include: {
         items: {
-          include: { service: true }, // 👈 agregar esto
+          include: { service: true },
         },
       },
     });
@@ -92,7 +92,7 @@ async function convertQuoteToRequest(quoteId, { samples }, userId) {
         requestNumber: nextRequestNumber(),
         clientId: quote.clientId,
         quoteId: quote.id,
-        status: "OPEN", // ajusta a tu enum real si es distinto
+        status: "OPEN",
       },
     });
     // Validar que no se excedan las cantidades cotizadas
@@ -118,13 +118,14 @@ async function convertQuoteToRequest(quoteId, { samples }, userId) {
     const createdSamples = [];
     for (let i = 0; i < samples.length; i++) {
       const s = samples[i];
-      const sampleCode = await generateSampleCode(tx); // 👈 async ahora
+      const sampleCode = await generateSampleCode(tx);
       const created = await tx.sample.create({
         data: {
           requestId: request.id,
           sampleCode,
           sampleName: s.sampleName || `Muestra ${i + 1}`,
-          description: s.description || null,
+          objetivoAnalisis: s.objetivoAnalisis || null,
+          cantidadRecibida: s.cantidadRecibida || null,
           receivedAt: new Date(),
           status: "EN_COLA",
         },
@@ -134,7 +135,6 @@ async function convertQuoteToRequest(quoteId, { samples }, userId) {
 
     // 4) Copiar QuoteItems → SampleService para cada muestra
     // (cada muestra hereda los análisis cotizados)
-    // ✅ DESPUÉS — cada muestra recibe sus propios análisis
     for (let i = 0; i < samples.length; i++) {
       const sampleData = samples[i];
       const createdSample = createdSamples[i];
@@ -169,13 +169,10 @@ async function convertQuoteToRequest(quoteId, { samples }, userId) {
     await tx.quote.update({
       where: { id: quote.id },
       data: {
-        status: "CONVERTED", // Cambiar de "CONVERTIDA" a "CONVERTED"
+        status: "CONVERTED",
         updatedAt: new Date(),
       },
     });
-
-    // (Opcional) auditoría/bitácora del usuario que convirtió:
-    // aquí no tienes tabla de audit para Quote, así que lo dejamos.
 
     return {
       requestId: request.id,
