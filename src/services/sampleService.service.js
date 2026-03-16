@@ -25,14 +25,20 @@ async function assignServicesToSample(sampleId, serviceIds) {
     throw e;
   }
 
-  await prisma.sampleService.createMany({
-    data: serviceIds.map((serviceId) => ({
-      sampleId: numericId,
-      serviceId,
-      status: "PENDING",
-    })),
-    skipDuplicates: true,
-  });
+  for (const serviceId of serviceIds) {
+    // Contar cuántas repeticiones ya existen
+    const existing = await prisma.sampleService.count({
+      where: { sampleId: numericId, serviceId },
+    });
+    await prisma.sampleService.create({
+      data: {
+        sampleId: numericId,
+        serviceId,
+        repeticion: existing + 1,
+        status: "PENDING",
+      },
+    });
+  }
 
   return prisma.sampleService.findMany({
     where: { sampleId: numericId },

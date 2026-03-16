@@ -152,12 +152,14 @@ async function convertQuoteToRequest(quoteId, { samples }, userId) {
         err.statusCode = 400;
         throw err;
       }
-
+      const repeticionCount = {};
       for (const serviceId of serviceIdsToAssign) {
+        repeticionCount[serviceId] = (repeticionCount[serviceId] || 0) + 1;
         await tx.sampleService.create({
           data: {
             sampleId: createdSample.id,
             serviceId,
+            repeticion: repeticionCount[serviceId],
             status: "PENDING",
             assignedTo: null,
           },

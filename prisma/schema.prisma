@@ -204,6 +204,8 @@ model SampleService {
   serviceId String
   service   Service @relation(fields: [serviceId], references: [id])
 
+  repeticion Int @default(1)
+
   status SampleServiceStatus @default(PENDING)
 
   assignedTo String?
@@ -213,7 +215,7 @@ model SampleService {
   createdAt DateTime @default(now())
   result    Result?
 
-  @@unique([sampleId, serviceId])
+  @@unique([sampleId, serviceId, repeticion])
   @@index([sampleId])
   @@index([serviceId])
   @@index([status])
