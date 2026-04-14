@@ -226,11 +226,24 @@ model Result {
   sampleServiceId String @unique
   sampleService   SampleService @relation(fields: [sampleServiceId], references: [id], onDelete: Cascade)
 
-  resultText   String?
-  resultNumber Decimal?
-  unit         String?
-  isFinal      Boolean  @default(false)
+  resultText    String?
+  resultNumber  Decimal?
+  unit          String?
+  isFinal       Boolean  @default(false)
+  observaciones String?
 
   recordedBy String
   recordedAt DateTime @default(now())
+
+  archivos ResultFile[]
+}
+
+model ResultFile {
+  id        String @id @default(uuid())
+  resultId  String
+  result    Result @relation(fields: [resultId], references: [id], onDelete: Cascade)
+
+  filename     String  // nombre original
+  path         String  // ruta en disco
+  createdAt    DateTime @default(now())
 }

@@ -3,6 +3,8 @@ const { changeStatusSchema } = require("../validators/sample.schema");
 const { listSamplesByStatus, getSampleById, changeSampleStatus, getKanbanSamples } = require("../services/request.service");
 const {listSampleServices, updateSampleServiceStatus, upsertResult,Z} = require("../services/sampleService.service");
 const { recalcAndUpdateSampleStatus } = require('../services/sampleStatus.recalc');
+const { upload } = require("../middlewares/upload.middleware");
+
 
 async function getSamples(req, res, next) {
   try {
@@ -53,9 +55,10 @@ async function postResult(req, res, next) {
   try {
     const { id } = req.params;
     const userId = req.user?.sub ?? 'system';
-    const result = await upsertResult(id, req.body, userId);
-    const updatedSS = await updateSampleServiceStatus(id, 'DONE');
+    const files = req.files || []; // 👈 array de archivos
 
+    const result = await upsertResult(id, req.body, userId, files);
+    const updatedSS = await updateSampleServiceStatus(id, 'DONE');
     await recalcAndUpdateSampleStatus(updatedSS.sampleId, userId);
 
     res.status(201).json(result);

@@ -42,7 +42,12 @@ async function assignServicesToSample(sampleId, serviceIds) {
 
   return prisma.sampleService.findMany({
     where: { sampleId: numericId },
-    include: { service: true, result: true },
+    include: {
+      service: true,
+      result: {
+        include: { archivos: true }, // 👈 faltaba esto
+      },
+    },
     orderBy: { createdAt: "asc" },
   });
 }
@@ -63,7 +68,12 @@ async function listSampleServices(sampleId) {
   }
   return prisma.sampleService.findMany({
     where: { sampleId: numericId },
-    include: { service: true, result: true },
+    include: {
+      service: true,
+      result: {
+        include: { archivos: true },
+      },
+    },
     orderBy: { createdAt: "asc" },
   });
 }
@@ -84,11 +94,17 @@ async function updateSampleServiceStatus(id, status) {
   return prisma.sampleService.update({
     where: { id },
     data,
-    include: { service: true, result: true, sample: true },
+    include: {
+      service: true,
+      result: {
+        include: { archivos: true },
+      },
+      sample: true,
+    },
   });
 }
 
-async function upsertResult(sampleServiceId, payload, userId) {
+async function upsertResult(sampleServiceId, payload, userId, files = []) {
   const ss = await prisma.sampleService.findUnique({
     where: { id: sampleServiceId },
   });
@@ -101,20 +117,35 @@ async function upsertResult(sampleServiceId, payload, userId) {
   const data = {
     resultText: payload.resultText ?? null,
     resultNumber:
-      payload.resultNumber != null ? String(payload.resultNumber) : null,
+      payload.resultNumber != null && payload.resultNumber !== ""
+        ? String(payload.resultNumber)
+        : null,
     unit: payload.unit ?? null,
-    isFinal: payload.isFinal ?? false,
+    isFinal: payload.isFinal === true || payload.isFinal === "true",
+    observaciones: payload.observaciones ?? null,
     recordedBy: userId,
   };
 
-  return prisma.result.upsert({
+  const result = await prisma.result.upsert({
     where: { sampleServiceId },
     create: { sampleServiceId, ...data },
-    update: {
-      ...data,
-      recordedBy: userId,
-      recordedAt: new Date(),
-    },
+    update: { ...data, recordedAt: new Date() },
+  });
+
+  // Guardar archivos si hay nuevos
+  if (files.length > 0) {
+    await prisma.resultFile.createMany({
+      data: files.map((f) => ({
+        resultId: result.id,
+        filename: f.originalname,
+        path: `/uploads/evidencias/sample-${ss.sampleId}/${f.filename}`,
+      })),
+    });
+  }
+
+  return prisma.result.findUnique({
+    where: { id: result.id },
+    include: { archivos: true },
   });
 }
 

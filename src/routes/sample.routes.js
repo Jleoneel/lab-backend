@@ -11,9 +11,11 @@ const {
   postResult,
   getKanban
 } = require("../controllers/sample.controller");
+const { upload } = require("../middlewares/upload.middleware");
+
 
 router.patch('/sample-services/:id/status', updateServiceStatus);
-router.post('/sample-services/:id/result', postResult);
+router.post('/sample-services/:id/result', upload.array('archivos', 10), postResult);
 router.post('/:id/emit-report', emitReport);
 router.get('/kanban', getKanban);
 router.get('/:id', getSample);
