@@ -247,3 +247,73 @@ model ResultFile {
   path         String  // ruta en disco
   createdAt    DateTime @default(now())
 }
+
+model ConfiguracionSistema {
+  id        String   @id @default(uuid())
+  clave     String   @unique
+  valor     String
+  updatedAt DateTime @updatedAt
+}
+
+enum CategoriaReactivo {
+  SUJETOS_FISCALIZACION
+  FUERZAS_ARMADAS
+  QUIMICA
+  BIOLOGIA_MOLECULAR
+  MICROBIOLOGIA
+}
+
+enum UnidadReactivo {
+  LITROS
+  KILOGRAMOS
+}
+
+enum TipoMovimiento {
+  INGRESO
+  CONSUMO
+}
+
+enum RazonMovimiento {
+  INICIO
+  ANALISIS
+  PREPARACION_SOLUCION
+  LIMPIEZA
+  VENCIMIENTO
+  OTRO
+}
+
+model Reactivo {
+  id          String            @id @default(uuid())
+  codigo      String            @unique
+  nombre      String
+  categoria   CategoriaReactivo
+  unidad      UnidadReactivo
+  stockActual Decimal           @default(0)
+  stockMinimo Decimal           @default(0)
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  movimientos MovimientoReactivo[]
+
+  @@index([nombre])
+  @@index([categoria])
+}
+
+model MovimientoReactivo {
+  id              String          @id @default(uuid())
+  reactivoId      String
+  reactivo        Reactivo        @relation(fields: [reactivoId], references: [id])
+
+  tipo            TipoMovimiento
+  razon           RazonMovimiento @default(ANALISIS)
+  cantidad        Decimal
+  sampleServiceId String?
+  registradoPor   String
+  observaciones   String?
+  createdAt       DateTime        @default(now())
+
+  @@index([reactivoId])
+  @@index([createdAt])
+  @@index([tipo])
+}
