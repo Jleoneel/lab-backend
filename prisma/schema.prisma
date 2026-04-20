@@ -214,6 +214,8 @@ model SampleService {
 
   createdAt DateTime @default(now())
   result    Result?
+  movimientosReactivos MovimientoReactivo[]
+
 
   @@unique([sampleId, serviceId, repeticion])
   @@index([sampleId])
@@ -308,7 +310,9 @@ model MovimientoReactivo {
   tipo            TipoMovimiento
   razon           RazonMovimiento @default(ANALISIS)
   cantidad        Decimal
+
   sampleServiceId String?
+  sampleService   SampleService?  @relation(fields: [sampleServiceId], references: [id])
   registradoPor   String
   observaciones   String?
   createdAt       DateTime        @default(now())

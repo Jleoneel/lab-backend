@@ -73,6 +73,10 @@ async function listSampleServices(sampleId) {
       result: {
         include: { archivos: true },
       },
+      movimientosReactivos: {
+        include: { reactivo: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
     orderBy: { createdAt: "asc" },
   });
