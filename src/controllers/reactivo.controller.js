@@ -86,7 +86,7 @@ async function putReactivo(req, res, next) {
 // Registrar movimiento (ingreso o consumo)
 async function postMovimiento(req, res, next) {
   try {
-    const { reactivoId, tipo, razon, cantidad, sampleServiceId, observaciones } = req.body;
+    const { reactivoId, tipo, razonId, cantidad, sampleServiceId, observaciones } = req.body;
     const userId = req.user?.sub ?? 'system';
 
     if (!reactivoId || !tipo || !cantidad) {
@@ -101,29 +101,26 @@ async function postMovimiento(req, res, next) {
     const reactivo = await prisma.reactivo.findUnique({ where: { id: reactivoId } });
     if (!reactivo) return res.status(404).json({ message: "Reactivo no encontrado" });
 
-    // Verificar stock suficiente para consumo
     if (tipo === 'CONSUMO' && parseFloat(reactivo.stockActual) < cantidadNum) {
       return res.status(400).json({ message: "Stock insuficiente" });
     }
 
-    // Calcular nuevo stock
     const nuevoStock = tipo === 'INGRESO'
       ? parseFloat(reactivo.stockActual) + cantidadNum
       : parseFloat(reactivo.stockActual) - cantidadNum;
 
-    // Transacción: crear movimiento + actualizar stock
     const [movimiento] = await prisma.$transaction([
       prisma.movimientoReactivo.create({
         data: {
           reactivoId,
           tipo,
-          razon: razon || 'ANALISIS',
+          razonId: razonId || null, // 👈
           cantidad: String(cantidadNum),
           sampleServiceId: sampleServiceId || null,
           registradoPor: userId,
           observaciones: observaciones || null,
         },
-        include: { reactivo: true }
+        include: { reactivo: true, razon: true }
       }),
       prisma.reactivo.update({
         where: { id: reactivoId },

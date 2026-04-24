@@ -275,15 +275,6 @@ enum TipoMovimiento {
   CONSUMO
 }
 
-enum RazonMovimiento {
-  INICIO
-  ANALISIS
-  PREPARACION_SOLUCION
-  LIMPIEZA
-  VENCIMIENTO
-  OTRO
-}
-
 model Reactivo {
   id          String            @id @default(uuid())
   codigo      String            @unique
@@ -303,21 +294,54 @@ model Reactivo {
 }
 
 model MovimientoReactivo {
-  id              String          @id @default(uuid())
+  id              String       @id @default(uuid())
   reactivoId      String
-  reactivo        Reactivo        @relation(fields: [reactivoId], references: [id])
+  reactivo        Reactivo     @relation(fields: [reactivoId], references: [id])
 
   tipo            TipoMovimiento
-  razon           RazonMovimiento @default(ANALISIS)
+  razonId         String?          
+  razon           RazonConsumo? @relation(fields: [razonId], references: [id])
   cantidad        Decimal
-
   sampleServiceId String?
-  sampleService   SampleService?  @relation(fields: [sampleServiceId], references: [id])
+  sampleService   SampleService? @relation(fields: [sampleServiceId], references: [id])
   registradoPor   String
   observaciones   String?
-  createdAt       DateTime        @default(now())
+  createdAt       DateTime     @default(now())
 
   @@index([reactivoId])
   @@index([createdAt])
   @@index([tipo])
+}
+
+model RazonConsumo {
+  id        String   @id @default(uuid())
+  nombre    String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movimientos MovimientoReactivo[]
+}
+
+enum EstadoEquipo {
+  ACTIVO
+  EN_MANTENIMIENTO
+  FUERA_DE_SERVICIO
+  DADO_DE_BAJA
+}
+
+model Equipo {
+  id                   String      @id @default(uuid())
+  nombre               String
+  modelo               String?
+  marca                String?
+  serie                String?     @unique
+  codigoInventario     String      @unique
+  ubicacion            String?
+  fechaAdquisicion     DateTime?
+  fechaMantenimiento   DateTime?
+  fechaCalibracion     DateTime?
+  estado               EstadoEquipo @default(ACTIVO)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
 }
