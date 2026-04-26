@@ -12,6 +12,7 @@ const sampleServiceRoutes = require("./routes/sampleService.routes");
 const settingsRoutes = require("./routes/settings.routes");
 const reactivoRoutes = require("./routes/reactivo.routes");
 const razonRoutes = require("./routes/razon.routes");
+const equipoRoutes = require("./routes/equipo.routes");
 
 const { errorMiddleware } = require("./middlewares/error.middleware");
 
@@ -34,10 +35,7 @@ app.use("/quotes", quoteRoutes);
 app.use("/settings", settingsRoutes);
 app.use("/reactivos", reactivoRoutes);
 app.use("/razones", razonRoutes);
-
-
-
-
+app.use("/equipos", equipoRoutes);
 app.use(errorMiddleware);
 
 module.exports = { app };
