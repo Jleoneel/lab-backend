@@ -40,7 +40,7 @@ async function listRequests({ q, take = 20 } = {}) {
     take,
     include: {
       client: true,
-      quote: true, // para obtener quoteNumber
+      quote: true,
       samples: true,
     },
   });
@@ -59,7 +59,7 @@ async function getRequestById(id) {
     where: { id: numericId },
     include: {
       client: true,
-      quote: true, // para obtener quoteNumber
+      quote: true,
       samples: {
         orderBy: { createdAt: "desc" },
       },
@@ -81,7 +81,6 @@ async function getSamplesByRequestId(requestId) {
     where: { requestId: numericId },
     orderBy: { createdAt: "desc" },
     include: {
-      // Si necesitas incluir servicios o resultados, agrégalo aquí
     },
   });
 }
@@ -161,7 +160,6 @@ async function listSamplesByStatus(status) {
 
 // Obtener una muestra por ID con su historial y datos relacionados
 async function getSampleById(id) {
-  // Convertir a número
   const numericId = typeof id === "string" ? parseInt(id, 10) : id;
   if (isNaN(numericId)) {
     const err = new Error("ID de muestra inválido");

@@ -9,7 +9,8 @@ const {
   updateServiceStatus,
   emitReport,
   postResult,
-  getKanban
+  getKanban,
+  assignAnalista
 } = require("../controllers/sample.controller");
 const { upload } = require("../middlewares/upload.middleware");
 
@@ -25,6 +26,8 @@ router.get('/', getSamples);
 router.get('/:id', getSample);
 router.patch('/:id/status', patchSampleStatus);
 router.get('/:id/services', getSampleServices);
+
+router.patch('/sample-services/:id/assign', assignAnalista);
 
 
 module.exports = router;

@@ -83,7 +83,6 @@ async function listSampleServices(sampleId) {
 }
 
 async function updateSampleServiceStatus(id, status) {
-  // SampleService.id es UUID, NO se hace parseInt
   const ss = await prisma.sampleService.findUnique({ where: { id } });
   if (!ss) {
     const e = new Error("Análisis de muestra no encontrado");
@@ -153,9 +152,38 @@ async function upsertResult(sampleServiceId, payload, userId, files = []) {
   });
 }
 
+async function asignarAnalista(sampleServiceId, userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, fullName: true, role: true },
+  });
+
+  if (!user) {
+    const e = new Error("Usuario no encontrado");
+    e.statusCode = 404;
+    throw e;
+  }
+
+  if (user.role !== "ANALYST") {
+    const e = new Error("Solo se pueden asignar analistas");
+    e.statusCode = 400;
+    throw e;
+  }
+
+  return prisma.sampleService.update({
+    where: { id: sampleServiceId },
+    data: {
+      assignedToId: user.id,
+      assignedTo: user.fullName,
+    },
+    include: { service: true, result: { include: { archivos: true } } },
+  });
+}
+
 module.exports = {
   assignServicesToSample,
   listSampleServices,
   updateSampleServiceStatus,
   upsertResult,
+  asignarAnalista,
 };

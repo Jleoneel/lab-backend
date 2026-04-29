@@ -21,6 +21,8 @@ model User {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  analysesAssigned SampleService[]
 }
 
 model Client {
@@ -209,6 +211,9 @@ model SampleService {
   status SampleServiceStatus @default(PENDING)
 
   assignedTo String?
+  assignedToId  String?
+  assignedUser User? @relation(fields: [assignedToId], references: [id])
+
   startedAt  DateTime?
   finishedAt DateTime?
 
@@ -221,6 +226,7 @@ model SampleService {
   @@index([sampleId])
   @@index([serviceId])
   @@index([status])
+  @@index([assignedToId])
 }
 
 model Result {

@@ -1,7 +1,7 @@
 const { prisma } = require("../db/prisma");
 const { changeStatusSchema } = require("../validators/sample.schema");
 const { listSamplesByStatus, getSampleById, changeSampleStatus, getKanbanSamples } = require("../services/request.service");
-const {listSampleServices, updateSampleServiceStatus, upsertResult,Z} = require("../services/sampleService.service");
+const {listSampleServices, updateSampleServiceStatus, upsertResult, asignarAnalista} = require("../services/sampleService.service");
 const { recalcAndUpdateSampleStatus } = require('../services/sampleStatus.recalc');
 const { upload } = require("../middlewares/upload.middleware");
 
@@ -141,4 +141,16 @@ async function getKanban(req, res, next) {
   }
 }
 
-module.exports = { getSamples, getSample, patchSampleStatus, getSampleServices, updateServiceStatus, postResult, emitReport, getKanban };
+async function assignAnalista(req, res, next) {
+  try {
+    const { id } = req.params; // sampleServiceId
+    const { userId } = req.body;
+
+    if (!userId) return res.status(400).json({ message: 'userId requerido' });
+
+    const updated = await asignarAnalista(id, userId);
+    res.json(updated);
+  } catch (e) { next(e); }
+}
+
+module.exports = { getSamples, getSample, patchSampleStatus, getSampleServices, updateServiceStatus, postResult, emitReport, getKanban, assignAnalista };
