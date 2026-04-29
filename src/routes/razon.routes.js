@@ -3,9 +3,10 @@ const { authMiddleware } = require("../middlewares/auth.middleware");
 const { requireAdmin } = require("../middlewares/role.middleware");
 const { getRazones, postRazon, putRazon, deleteRazon } = require("../controllers/razon.controller");
 
-router.use(authMiddleware, requireAdmin);
-
+router.use(authMiddleware);
 router.get("/", getRazones);
+
+router.use(requireAdmin);
 router.post("/", postRazon);
 router.put("/:id", putRazon);
 router.delete("/:id", deleteRazon);

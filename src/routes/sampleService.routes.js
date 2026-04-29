@@ -8,12 +8,12 @@ const {
   postResult,
 } = require("../controllers/sampleService.controller");
 
-router.use(authMiddleware, requireAdmin);
+router.use(authMiddleware);
 
-router.post("/samples/:id/services", postAssignServices);
-router.get("/samples/:id/services", getSampleServices);
+router.post("/samples/:id/services", requireAdmin, postAssignServices);
+router.get("/samples/:id/services", requireAdmin, getSampleServices);
 
-router.patch("/sample-services/:id/status", patchSampleServiceStatus);
-router.post("/sample-services/:id/result", postResult);
+router.patch("/sample-services/:id/status", requireAdmin, patchSampleServiceStatus);
+router.post("/sample-services/:id/result", requireAdmin, postResult);
 
 module.exports = router;

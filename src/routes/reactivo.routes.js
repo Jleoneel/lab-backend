@@ -6,13 +6,13 @@ const {
   putReactivo, postMovimiento, getMovimientos
 } = require("../controllers/reactivo.controller");
 
-router.use(authMiddleware, requireAdmin);
-
+router.use(authMiddleware);
 router.get("/", getReactivos);
+router.post("/movimientos", postMovimiento);
+
+router.use(requireAdmin);
 router.get("/:id", getReactivo);
 router.post("/", postReactivo);
 router.put("/:id", putReactivo);
-router.post("/movimientos", postMovimiento);
 router.get("/:id/movimientos", getMovimientos);
-
 module.exports = router;

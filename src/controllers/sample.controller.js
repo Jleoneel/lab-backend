@@ -153,4 +153,24 @@ async function assignAnalista(req, res, next) {
   } catch (e) { next(e); }
 }
 
-module.exports = { getSamples, getSample, patchSampleStatus, getSampleServices, updateServiceStatus, postResult, emitReport, getKanban, assignAnalista };
+async function getMyAnalyses(req, res, next) {
+  try {
+    const userId = req.user?.sub;
+    const analyses = await prisma.sampleService.findMany({
+      where: { assignedToId: userId },
+      include: {
+        service: true,
+        result: { include: { archivos: true } },
+        sample: {
+          include: {
+            request: { include: { client: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(analyses);
+  } catch (e) { next(e); }
+}
+
+module.exports = { getSamples, getSample, patchSampleStatus, getSampleServices, updateServiceStatus, postResult, emitReport, getKanban, assignAnalista, getMyAnalyses };
