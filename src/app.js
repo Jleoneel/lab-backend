@@ -14,6 +14,7 @@ const reactivoRoutes = require("./routes/reactivo.routes");
 const razonRoutes = require("./routes/razon.routes");
 const equipoRoutes = require("./routes/equipo.routes");
 const userRoutes = require("./routes/user.routes");
+const notificationRoutes = require("./routes/notification.routes");
 
 const { errorMiddleware } = require("./middlewares/error.middleware");
 
@@ -38,6 +39,7 @@ app.use("/reactivos", reactivoRoutes);
 app.use("/razones", razonRoutes);
 app.use("/equipos", equipoRoutes);
 app.use("/users", userRoutes);
+app.use("/notifications", notificationRoutes);
 app.use(errorMiddleware);
 
 module.exports = { app };
