@@ -82,7 +82,6 @@ async function streamNotifications(req, res) {
 
       res.write(`data: ${data}\n\n`);
     } catch (error) {
-      console.error('SSE error:', error);
     }
   };
 

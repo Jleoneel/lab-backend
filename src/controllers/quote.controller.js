@@ -79,7 +79,6 @@ async function updateQuoteStatus(req, res, next) {
 
     res.json(updatedQuote);
   } catch (error) {
-    console.error("Error en updateQuoteStatus:", error);
     next(error);
   }
 }

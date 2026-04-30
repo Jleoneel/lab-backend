@@ -15,7 +15,6 @@ async function main() {
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    console.log("Admin ya existe:", email);
     return;
   }
 
@@ -29,13 +28,10 @@ async function main() {
       role: "ADMIN",
     },
   });
-
-  console.log("Admin creado:", email, "pass:", password);
 }
 
 main()
   .catch((e) => {
-    console.error(e);
     process.exit(1);
   })
   .finally(async () => {
