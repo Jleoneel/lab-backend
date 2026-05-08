@@ -71,6 +71,30 @@ async function resetPassword(req, res, next) {
   } catch (e) { next(e); }
 }
 
+// Cambiar mi contraseña
+async function changeMyPassword(req, res, next) {
+  try {
+    const userId = req.user?.sub;
+    const { passwordActual, passwordNueva } = req.body;
+
+    if (!passwordActual || !passwordNueva) {
+      return res.status(400).json({ message: 'Contraseña actual y nueva son obligatorias' });
+    }
+    if (passwordNueva.length < 6) {
+      return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const ok = await bcrypt.compare(passwordActual, user.passwordHash);
+    if (!ok) return res.status(400).json({ message: 'Contraseña actual incorrecta' });
+
+    const hash = await bcrypt.hash(passwordNueva, 10);
+    await prisma.user.update({ where: { id: userId }, data: { passwordHash: hash } });
+
+    res.json({ message: 'Contraseña actualizada correctamente' });
+  } catch (e) { next(e); }
+}
+
 // Obtener analistas
 async function getAnalistas(req, res, next) {
   try {
@@ -93,4 +117,4 @@ async function getUsers(req, res, next) {
   } catch (e) { next(e); }
 }
 
-module.exports = { createUser, updateUser, resetPassword, getAnalistas, getUsers };
+module.exports = { createUser, updateUser, resetPassword, getAnalistas, getUsers, changeMyPassword };
