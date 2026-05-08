@@ -22,7 +22,9 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  analysesAssigned SampleService[]
+  analysesAssigned  SampleService[]
+  mensajesEnviados  Mensaje[] @relation("MensajesEnviados")  
+  mensajesRecibidos Mensaje[] @relation("MensajesRecibidos")
 }
 
 model Client {
@@ -350,4 +352,41 @@ model Equipo {
   estado               EstadoEquipo @default(ACTIVO)
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
+}
+
+model CategoriaDocumento {
+  id        String   @id @default(uuid())
+  nombre    String
+  orden     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enlaces EnlaceDocumento[]
+}
+
+model EnlaceDocumento {
+  id          String   @id @default(uuid())
+  titulo      String
+  url         String
+  descripcion String?
+  categoriaId String
+  categoria   CategoriaDocumento @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  orden       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Mensaje {
+  id          String   @id @default(uuid())
+  fromId      String
+  from        User     @relation("MensajesEnviados", fields: [fromId], references: [id])
+  toId        String
+  to          User     @relation("MensajesRecibidos", fields: [toId], references: [id])
+  contenido   String
+  leido       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([toId])
+  @@index([fromId])
+  @@index([leido])
 }

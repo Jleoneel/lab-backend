@@ -5,83 +5,111 @@ async function streamNotifications(req, res) {
   const role = req.user?.role;
 
   // Headers SSE
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.flushHeaders();
 
   const sendNotifications = async () => {
     try {
       let notifications = [];
 
-      if (role === 'ANALYST') {
+      if (role === "ANALYST") {
         // Análisis pendientes asignados al analista
         const pendientes = await prisma.sampleService.findMany({
-          where: { assignedToId: userId, status: 'PENDING' },
+          where: { assignedToId: userId, status: "PENDING" },
           include: {
             service: true,
-            sample: { include: { request: { include: { client: true } } } }
+            sample: { include: { request: { include: { client: true } } } },
           },
-          orderBy: { createdAt: 'desc' },
-          take: 10
+          orderBy: { createdAt: "desc" },
+          take: 10,
         });
 
-        notifications = pendientes.map(a => ({
+        notifications = pendientes.map((a) => ({
           id: a.id,
-          tipo: 'ANALISIS_PENDIENTE',
-          titulo: 'Análisis pendiente',
+          tipo: "ANALISIS_PENDIENTE",
+          titulo: "Análisis pendiente",
           mensaje: `${a.service?.name} — ${a.sample?.sampleCode}`,
           cliente: a.sample?.request?.client?.name,
-          fecha: a.createdAt
+          fecha: a.createdAt,
         }));
-      } else if (role === 'ADMIN') {
+      } else if (role === "ADMIN") {
         const hoy = new Date();
         const en15dias = new Date(hoy.getTime() + 15 * 24 * 60 * 60 * 1000);
 
         // Calibraciones próximas y vencidas
         const equipos = await prisma.equipo.findMany({
-          where: { fechaCalibracion: { lte: en15dias } }
+          where: { fechaCalibracion: { lte: en15dias } },
         });
 
         const notifEquipos = equipos
-          .filter(e => e.fechaCalibracion)
-          .map(e => {
-            const dias = Math.ceil((new Date(e.fechaCalibracion) - hoy) / (1000 * 60 * 60 * 24));
+          .filter((e) => e.fechaCalibracion)
+          .map((e) => {
+            const dias = Math.ceil(
+              (new Date(e.fechaCalibracion) - hoy) / (1000 * 60 * 60 * 24),
+            );
             return {
               id: `equipo-${e.id}`,
-              tipo: dias < 0 ? 'CALIBRACION_VENCIDA' : 'CALIBRACION_PROXIMA',
-              titulo: dias < 0 ? 'Calibración vencida' : 'Calibración próxima',
+              tipo: dias < 0 ? "CALIBRACION_VENCIDA" : "CALIBRACION_PROXIMA",
+              titulo: dias < 0 ? "Calibración vencida" : "Calibración próxima",
               mensaje: `${e.nombre} — ${dias < 0 ? `venció hace ${Math.abs(dias)} día(s)` : `vence en ${dias} día(s)`}`,
-              fecha: e.fechaCalibracion
+              fecha: e.fechaCalibracion,
             };
           });
 
         //Stock bajo
         const reactivos = await prisma.reactivo.findMany({
-          where: { isActive: true }
+          where: { isActive: true },
         });
 
         const notifStock = reactivos
-          .filter(r => parseFloat(r.stockMinimo) > 0 && parseFloat(r.stockActual) <= parseFloat(r.stockMinimo))
-          .map(r => ({
+          .filter(
+            (r) =>
+              parseFloat(r.stockMinimo) > 0 &&
+              parseFloat(r.stockActual) <= parseFloat(r.stockMinimo),
+          )
+          .map((r) => ({
             id: `reactivo-${r.id}`,
-            tipo: 'STOCK_BAJO',
-            titulo: 'Stock bajo mínimo',
-            mensaje: `${r.nombre} — ${parseFloat(r.stockActual)} ${r.unidad === 'LITROS' ? 'L' : 'KG'} disponibles`,
-            fecha: r.updatedAt
+            tipo: "STOCK_BAJO",
+            titulo: "Stock bajo mínimo",
+            mensaje: `${r.nombre} — ${parseFloat(r.stockActual)} ${r.unidad === "LITROS" ? "L" : "KG"} disponibles`,
+            fecha: r.updatedAt,
           }));
 
         notifications = [...notifEquipos, ...notifStock];
       }
 
+      const mensajesNoLeidos = await prisma.mensaje.findMany({
+        where: { toId: userId, leido: false },
+        include: { from: { select: { fullName: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      });
+
+      const notifMensajes = mensajesNoLeidos.map((m) => ({
+        id: `mensaje-${m.id}`,
+        tipo: "MENSAJE",
+        titulo: `Mensaje de ${m.from.fullName}`,
+        mensaje:
+          m.contenido.length > 60
+            ? m.contenido.substring(0, 60) + "..."
+            : m.contenido,
+        fecha: m.createdAt,
+        mensajeId: m.id,
+      }));
+
+      notifications = [...notifMensajes, ...notifications];
+
       const data = JSON.stringify({
         count: notifications.length,
-        notifications
+        notifications,
       });
 
       res.write(`data: ${data}\n\n`);
     } catch (error) {
+      console.error('SSE notification error:', error);
     }
   };
 
@@ -92,7 +120,7 @@ async function streamNotifications(req, res) {
   const interval = setInterval(sendNotifications, 10000);
 
   // Limpiar al desconectar
-  req.on('close', () => {
+  req.on("close", () => {
     clearInterval(interval);
     res.end();
   });
