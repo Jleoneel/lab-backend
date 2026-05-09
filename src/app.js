@@ -27,6 +27,7 @@ const corsOptions = {
     'http://localhost:5173',
     'https://lab-frotend.vercel.app',
     'https://lab-frotend-n9mzqtyg7-janerson-s-projects.vercel.app',
+    'https://caba-livid.vercel.app',
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
