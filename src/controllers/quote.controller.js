@@ -7,7 +7,7 @@ const {
   listQuotes,
 } = require("../services/quote.service");
 const { convertQuoteToRequest } = require("../services/quoteConvert.service");
-
+const { updateQuote } = require('../services/quote.service');
 
 async function postQuote(req, res, next) {
   try {
@@ -57,7 +57,6 @@ async function getQuotes(req, res, next) {
   }
 }
 
-// AGREGAR ESTO a quote.controller.js
 async function updateQuoteStatus(req, res, next) {
   try {
     const { id } = req.params;
@@ -82,8 +81,6 @@ async function updateQuoteStatus(req, res, next) {
     next(error);
   }
 }
-
-const { updateQuote } = require('../services/quote.service');
 
 async function putQuote(req, res, next) {
   try {

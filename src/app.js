@@ -23,8 +23,14 @@ const { errorMiddleware } = require("./middlewares/error.middleware");
 const app = express();
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://lab-frotend.vercel.app',
+    'https://lab-frotend-n9mzqtyg7-janerson-s-projects.vercel.app'
+  ],
+  credentials: true
+}));app.use(express.json());
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 

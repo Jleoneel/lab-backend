@@ -65,7 +65,6 @@ async function patchSampleServiceStatus(req, res, next) {
     return next(e); // SOLO next. NO res.json aquí.
   }
 }
-// sampleServiceController.js
 
 async function postResult(req, res, next) {
   try {

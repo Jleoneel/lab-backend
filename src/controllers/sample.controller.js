@@ -143,7 +143,7 @@ async function getKanban(req, res, next) {
 
 async function assignAnalista(req, res, next) {
   try {
-    const { id } = req.params; // sampleServiceId
+    const { id } = req.params;
     const { userId } = req.body;
 
     if (!userId) return res.status(400).json({ message: 'userId requerido' });
