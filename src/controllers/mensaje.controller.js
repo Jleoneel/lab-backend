@@ -96,4 +96,46 @@ async function getConversacion(req, res, next) {
   } catch (e) { next(e); }
 }
 
-module.exports = { getMensajes, postMensaje, marcarLeido, marcarTodosLeidos, getConversacion };
+async function getConversaciones(req, res, next) {
+  try {
+    const userId = req.user?.sub;
+
+    // Busca todos los usuarios con quienes tiene mensajes
+    const mensajes = await prisma.mensaje.findMany({
+      where: {
+        OR: [{ fromId: userId }, { toId: userId }]
+      },
+      include: {
+        from: { select: { id: true, fullName: true, role: true } },
+        to: { select: { id: true, fullName: true, role: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Agrupa por el otro usuario
+    const conversacionesMap = new Map();
+
+    mensajes.forEach(msg => {
+      const otroUser = msg.fromId === userId ? msg.to : msg.from;
+      
+      if (!conversacionesMap.has(otroUser.id)) {
+        conversacionesMap.set(otroUser.id, {
+          otroUser,
+          ultimoMensaje: msg,
+          noLeidos: 0
+        });
+      }
+
+      // Cuenta no leídos
+      if (msg.toId === userId && !msg.leido) {
+        const conv = conversacionesMap.get(otroUser.id);
+        conv.noLeidos += 1;
+      }
+    });
+
+    const conversaciones = Array.from(conversacionesMap.values());
+    res.json(conversaciones);
+  } catch (e) { next(e); }
+}
+
+module.exports = { getMensajes, postMensaje, marcarLeido, marcarTodosLeidos, getConversacion, getConversaciones };
