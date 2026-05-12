@@ -60,4 +60,40 @@ async function marcarTodosLeidos(req, res, next) {
   } catch (e) { next(e); }
 }
 
-module.exports = { getMensajes, postMensaje, marcarLeido, marcarTodosLeidos };
+async function getConversacion(req, res, next) {
+  try {
+    const userId = req.user?.sub;
+    const { otroUserId } = req.params;
+
+    // Verifica que el otro usuario existe
+    const otroUser = await prisma.user.findUnique({
+      where: { id: otroUserId },
+      select: { id: true, fullName: true, role: true }
+    });
+    if (!otroUser) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    // Trae mensajes en ambas direcciones
+    const mensajes = await prisma.mensaje.findMany({
+      where: {
+        OR: [
+          { fromId: userId, toId: otroUserId },
+          { fromId: otroUserId, toId: userId }
+        ]
+      },
+      include: {
+        from: { select: { id: true, fullName: true, role: true } }
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    // Marcar como leídos los que recibió el usuario actual
+    await prisma.mensaje.updateMany({
+      where: { fromId: otroUserId, toId: userId, leido: false },
+      data: { leido: true }
+    });
+
+    res.json({ otroUser, mensajes });
+  } catch (e) { next(e); }
+}
+
+module.exports = { getMensajes, postMensaje, marcarLeido, marcarTodosLeidos, getConversacion };
