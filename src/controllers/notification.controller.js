@@ -78,7 +78,23 @@ async function streamNotifications(req, res) {
             fecha: r.updatedAt,
           }));
 
-        notifications = [...notifEquipos, ...notifStock];
+        const listasParaInforme = await prisma.sample.findMany({
+          where: { status: "LISTO_PARA_INFORME" },
+          include: { request: { include: { client: true } } },
+          orderBy: { updatedAt: "desc" },
+          take: 10,
+        });
+
+        const notifInformes = listasParaInforme.map((s) => ({
+          id: `informe-${s.id}`,
+          tipo: "LISTO_INFORME",
+          titulo: "Muestra lista para informe",
+          mensaje: `${s.sampleCode} — ${s.sampleName || "Sin nombre"}`,
+          cliente: s.request?.client?.name,
+          fecha: s.updatedAt,
+        }));
+
+        notifications = [...notifInformes, ...notifEquipos, ...notifStock];
       }
 
       const mensajesNoLeidos = await prisma.mensaje.findMany({
@@ -109,7 +125,7 @@ async function streamNotifications(req, res) {
 
       res.write(`data: ${data}\n\n`);
     } catch (error) {
-      console.error('SSE notification error:', error);
+      console.error("SSE notification error:", error);
     }
   };
 
