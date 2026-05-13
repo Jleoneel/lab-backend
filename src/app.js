@@ -17,6 +17,7 @@ const userRoutes = require("./routes/user.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const documentoRoutes = require("./routes/documento.routes");
 const mensajeRoutes = require("./routes/mensaje.routes");
+const reportRoutes = require("./routes/report.routes");
 
 const { errorMiddleware } = require("./middlewares/error.middleware");
 
@@ -56,6 +57,7 @@ app.use("/users", userRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/documentos", documentoRoutes);
 app.use("/mensajes", mensajeRoutes);
+app.use("/reports", reportRoutes);
 
 app.use(errorMiddleware);
 
