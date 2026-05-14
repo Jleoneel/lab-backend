@@ -18,6 +18,7 @@ const notificationRoutes = require("./routes/notification.routes");
 const documentoRoutes = require("./routes/documento.routes");
 const mensajeRoutes = require("./routes/mensaje.routes");
 const reportRoutes = require("./routes/report.routes");
+const publicRoutes = require("./routes/public.routes");
 
 const { errorMiddleware } = require("./middlewares/error.middleware");
 
@@ -47,6 +48,7 @@ app.use("/services", serviceRoutes);
 app.use("/quotes", quoteRoutes);
 app.use("/requests", requestRoutes);
 app.use("/samples", sampleRoutes);
+app.use("/public", publicRoutes);
 app.use("/", sampleServiceRoutes);
 app.use("/quotes", quoteRoutes);
 app.use("/settings", settingsRoutes);

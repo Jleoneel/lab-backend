@@ -48,8 +48,6 @@ async function getRequestSamples(req, res, next) {
   }
 }
 
-// Aquí puedes agregar otros controladores (crear, actualizar, etc.)
-
 module.exports = {
   getRequests,
   getRequestById,
