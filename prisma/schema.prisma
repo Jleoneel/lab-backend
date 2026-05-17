@@ -265,12 +265,12 @@ model ConfiguracionSistema {
   updatedAt DateTime @updatedAt
 }
 
-enum CategoriaReactivo {
-  SUJETOS_FISCALIZACION
-  FUERZAS_ARMADAS
-  QUIMICA
-  BIOLOGIA_MOLECULAR
-  MICROBIOLOGIA
+model CategoriaReactivo {
+  id        String     @id @default(uuid())
+  nombre    String     @unique
+  activo    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  reactivos Reactivo[]
 }
 
 enum UnidadReactivo {
@@ -287,7 +287,7 @@ model Reactivo {
   id          String            @id @default(uuid())
   codigo      String            @unique
   nombre      String
-  categoria   CategoriaReactivo
+  categoriaId String
   unidad      UnidadReactivo
   stockActual Decimal           @default(0)
   stockMinimo Decimal           @default(0)
@@ -295,10 +295,11 @@ model Reactivo {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
+  categoria   CategoriaReactivo @relation(fields: [categoriaId], references: [id])
   movimientos MovimientoReactivo[]
 
   @@index([nombre])
-  @@index([categoria])
+  @@index([categoriaId])
 }
 
 model MovimientoReactivo {
@@ -346,6 +347,7 @@ model Equipo {
   serie                String?     @unique
   codigoInventario     String      @unique
   ubicacion            String?
+  fotoUrl String?
   fechaAdquisicion     DateTime?
   fechaMantenimiento   DateTime?
   fechaCalibracion     DateTime?

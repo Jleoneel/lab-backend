@@ -9,6 +9,17 @@ const {
 const { convertQuoteToRequest } = require("../services/quoteConvert.service");
 const { updateQuote } = require('../services/quote.service');
 
+async function cancelarVencidas() {
+  const hoy = new Date();
+  await prisma.quote.updateMany({
+    where: {
+      status: { in: ['DRAFT', 'SENT'] },
+      validUntil: { lt: hoy }
+    },
+    data: { status: 'CANCELLED' }
+  });
+}
+
 async function postQuote(req, res, next) {
   try {
     const body = createQuoteSchema.parse(req.body);
@@ -21,6 +32,7 @@ async function postQuote(req, res, next) {
 
 async function getQuote(req, res, next) {
   try {
+    await cancelarVencidas();
     const q = await getQuoteById(req.params.id);
     if (!q)
       return res.status(404).json({ message: "Cotización no encontrada" });
@@ -45,6 +57,7 @@ async function convertQuote(req, res, next) {
 
 async function getQuotes(req, res, next) {
   try {
+    await cancelarVencidas();
     const q = req.query.q?.trim();
     const take = req.query.take ? Number(req.query.take) : 20;
     const data = await listQuotes({

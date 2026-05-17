@@ -19,6 +19,8 @@ const documentoRoutes = require("./routes/documento.routes");
 const mensajeRoutes = require("./routes/mensaje.routes");
 const reportRoutes = require("./routes/report.routes");
 const publicRoutes = require("./routes/public.routes");
+const categoriaReactivoRoutes = require('./routes/categoriaReactivo.routes');
+
 
 const { errorMiddleware } = require("./middlewares/error.middleware");
 
@@ -52,6 +54,7 @@ app.use("/public", publicRoutes);
 app.use("/", sampleServiceRoutes);
 app.use("/quotes", quoteRoutes);
 app.use("/settings", settingsRoutes);
+app.use('/categorias-reactivo', categoriaReactivoRoutes);
 app.use("/reactivos", reactivoRoutes);
 app.use("/razones", razonRoutes);
 app.use("/equipos", equipoRoutes);

@@ -6,13 +6,14 @@ async function getReactivos(req, res, next) {
     const { q, categoria } = req.query;
     const where = {
       ...(q ? { nombre: { contains: q, mode: "insensitive" } } : {}),
-      ...(categoria ? { categoria } : {}),
+      ...(categoria ? { categoriaId: categoria } : {}),
     };
 
     const reactivos = await prisma.reactivo.findMany({
       where,
       orderBy: { nombre: "asc" },
       include: {
+        categoria: true,
         _count: { select: { movimientos: true } }
       }
     });
@@ -40,9 +41,9 @@ async function getReactivo(req, res, next) {
 // Crear reactivo
 async function postReactivo(req, res, next) {
   try {
-    const { codigo, nombre, categoria, unidad, stockMinimo } = req.body;
+    const { codigo, nombre, categoriaId, unidad, stockMinimo } = req.body;
 
-    if (!codigo || !nombre || !categoria || !unidad) {
+    if (!codigo || !nombre || !categoriaId || !unidad) {
       return res.status(400).json({ message: "Campos obligatorios faltantes" });
     }
 
@@ -50,17 +51,16 @@ async function postReactivo(req, res, next) {
       data: {
         codigo,
         nombre,
-        categoria,
+        categoriaId,
         unidad,
         stockMinimo: stockMinimo ? parseFloat(stockMinimo) : 0,
         stockActual: 0,
-      }
+      },
+      include: { categoria: true }
     });
     res.status(201).json(reactivo);
   } catch (e) {
-    if (e.code === 'P2002') {
-      return res.status(400).json({ message: "El código ya existe" });
-    }
+    if (e.code === 'P2002') return res.status(400).json({ message: "El código ya existe" });
     next(e);
   }
 }
@@ -68,16 +68,17 @@ async function postReactivo(req, res, next) {
 // Actualizar reactivo
 async function putReactivo(req, res, next) {
   try {
-    const { nombre, categoria, unidad, stockMinimo, isActive } = req.body;
+    const { nombre, categoriaId, unidad, stockMinimo, isActive } = req.body;
     const reactivo = await prisma.reactivo.update({
       where: { id: req.params.id },
       data: {
         nombre,
-        categoria,
+        categoriaId,
         unidad,
         stockMinimo: stockMinimo != null ? parseFloat(stockMinimo) : undefined,
         isActive: isActive != null ? isActive : undefined,
-      }
+      },
+      include: { categoria: true }
     });
     res.json(reactivo);
   } catch (e) { next(e); }
