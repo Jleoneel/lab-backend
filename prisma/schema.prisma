@@ -34,11 +34,14 @@ model Client {
   city      String?
   phone     String?
   email     String?
+  acuerdoFirmado  Boolean   @default(false)
+  fechaAcuerdo    DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   quotes   Quote[]
   requests Request[]
+  acuerdos AcuerdoConfidencialidad[]
 
   @@index([name])
 }
@@ -90,7 +93,8 @@ model Quote {
 
   items QuoteItem[]
   request Request?
-
+  acuerdos AcuerdoConfidencialidad[]
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -391,4 +395,17 @@ model Mensaje {
   @@index([toId])
   @@index([fromId])
   @@index([leido])
+}
+
+model AcuerdoConfidencialidad {
+  id        String   @id @default(uuid())
+  codigo    String   @unique
+  version   String   @default("1.0")
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id])
+  quoteId   Int
+  quote     Quote    @relation(fields: [quoteId], references: [id])
+  creadoPor String
+  archivoUrl String?
+  createdAt DateTime @default(now())
 }

@@ -20,6 +20,7 @@ const mensajeRoutes = require("./routes/mensaje.routes");
 const reportRoutes = require("./routes/report.routes");
 const publicRoutes = require("./routes/public.routes");
 const categoriaReactivoRoutes = require('./routes/categoriaReactivo.routes');
+const acuerdoRoutes = require('./routes/acuerdo.routes');
 
 
 const { errorMiddleware } = require("./middlewares/error.middleware");
@@ -45,7 +46,7 @@ app.use(express.json());
 app.get("/health", (req, res) => res.json({ ok: true }));
 
 app.use("/auth", authRoutes);
-app.use("/clients", clientRoutes);    
+app.use("/clients", clientRoutes);
 app.use("/services", serviceRoutes);
 app.use("/quotes", quoteRoutes);
 app.use("/requests", requestRoutes);
@@ -63,6 +64,7 @@ app.use("/notifications", notificationRoutes);
 app.use("/documentos", documentoRoutes);
 app.use("/mensajes", mensajeRoutes);
 app.use("/reports", reportRoutes);
+app.use('/acuerdos', acuerdoRoutes);
 
 app.use(errorMiddleware);
 
