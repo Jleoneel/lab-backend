@@ -2,6 +2,7 @@ const { z } = require("zod");
 
 const createClientSchema = z.object({
   name: z.string().min(2),
+  cedula: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
