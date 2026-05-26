@@ -1,6 +1,19 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
+
+// Crear carpetas necesarias al arrancar
+const uploadDirs = [
+  '../uploads/equipos',
+  '../uploads/acuerdos',
+  '../uploads/templates',
+  '../uploads/evidencias',
+];
+uploadDirs.forEach(dir => {
+  const fullPath = path.join(__dirname, dir);
+  if (!fs.existsSync(fullPath)) fs.mkdirSync(fullPath, { recursive: true });
+});
 
 const authRoutes = require("./routes/auth.routes");
 const clientRoutes = require("./routes/client.routes");
