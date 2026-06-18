@@ -43,6 +43,7 @@ const app = express();
 const corsOptions = {
   origin: [
     'http://localhost:5173',
+    'http://192.168.18.150',
     'https://lab-frotend.vercel.app',
     'https://lab-frotend-n9mzqtyg7-janerson-s-projects.vercel.app',
     'https://caba-livid.vercel.app',
